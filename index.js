@@ -22,10 +22,14 @@ function handleKeyDown(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) {
     return;
   }
-  const letter = e.key.toLowerCase();
+  handleKey(e.key);
+}
+
+function handleKey(key) {
+  const letter = key.toLowerCase();
   if (letter === "enter") {
     if (currentAttempt.length < 5) {
-      reurn;
+      return;
     }
     if (!wordList.includes(currentAttempt)) {
       alert("Not in my thesaurus");
@@ -114,7 +118,7 @@ function buildKeybordRow(letters, isLastRow) {
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
     button.onclick = () => {
-      // TODO:
+      handleKey("enter");
     };
     row.appendChild(button);
   }
@@ -124,7 +128,7 @@ function buildKeybordRow(letters, isLastRow) {
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
     button.onclick = () => {
-      // TODO:
+      handleKey(letter);
     };
     row.appendChild(button);
   }
@@ -134,7 +138,7 @@ function buildKeybordRow(letters, isLastRow) {
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
     button.onclick = () => {
-      // TODO:
+      handleKey("backspace");
     };
     row.appendChild(button);
   }
