@@ -37,6 +37,7 @@ function handleKey(key) {
     }
     history.push(currentAttempt);
     currentAttempt = "";
+    updateKeybord();
   } else if (letter === "backspace") {
     currentAttempt = currentAttempt.slice(0, currentAttempt.length - 1);
   } else if (/^[a-z]$/.test(letter)) {
@@ -113,7 +114,7 @@ function buildKeybord() {
 function buildKeybordRow(letters, isLastRow) {
   let row = document.createElement("div");
   if (isLastRow) {
-    let button = document.createElement("button");
+    const button = document.createElement("button");
     button.textContent = "Enter";
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
@@ -123,7 +124,7 @@ function buildKeybordRow(letters, isLastRow) {
     row.appendChild(button);
   }
   for (let letter of letters) {
-    let button = document.createElement("button");
+    const button = document.createElement("button");
     button.textContent = letter;
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
@@ -131,9 +132,10 @@ function buildKeybordRow(letters, isLastRow) {
       handleKey(letter);
     };
     row.appendChild(button);
+    keybordButtons.set(letter, button);
   }
   if (isLastRow) {
-    let button = document.createElement("button");
+    const button = document.createElement("button");
     button.textContent = "Backspace";
     button.className = "button";
     button.style.backgroundColor = LIGHT_GREY;
@@ -145,10 +147,38 @@ function buildKeybordRow(letters, isLastRow) {
   keybord.appendChild(row);
 }
 
+function getBetterColor(a, b) {
+  if (a === GREEN || b === GREEN) {
+    return GREEN;
+  }
+  if (a === YELLOW || b === YELLOW) {
+    return YELLOW;
+  }
+  return GREY;
+}
+
+function updateKeybord() {
+  const bestColors = new Map();
+  for (let attempt of history) {
+    for (let i = 0; i < attempt.length; i++) {
+      const color = getBgColor(attempt, i);
+      const key = attempt[i];
+      const bestColor = bestColors.get(key);
+      bestColors.set(key, getBetterColor(color, bestColor));
+    }
+  }
+
+  for (let [key, button] of keybordButtons) {
+    button.style.backgroundColor = bestColors.get(key);
+  }
+}
+
 let grid = document.getElementById("grid");
 let keybord = document.getElementById("keybord");
+let keybordButtons = new Map();
 
 buildGrid();
 buildKeybord();
 updateGrid();
+updateKeybord();
 window.addEventListener("keydown", handleKeyDown);
