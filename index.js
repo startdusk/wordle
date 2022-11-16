@@ -88,8 +88,13 @@ function drawAttempt(row, attempt, isCurrent) {
     }
     if (isCurrent) {
       cell.style.backgroundColor = BLACK;
+      cell.style.borderColor = "";
+      if (attempt[i] !== undefined) {
+        cell.style.borderColor = MIDDLE_GREY;
+      }
     } else {
       cell.style.backgroundColor = getBgColor(attempt, i);
+      cell.style.borderColor = getBgColor(attempt, i);
     }
   }
 }
@@ -97,6 +102,7 @@ function drawAttempt(row, attempt, isCurrent) {
 const BLACK = "#111";
 const GREY = "#212121";
 const LIGHT_GREY = "#888";
+const MIDDLE_GREY = "#666";
 const GREEN = "#538d4e";
 const YELLOW = "#b59f3b";
 
@@ -178,6 +184,7 @@ function updateKeybord() {
 
   for (let [key, button] of keybordButtons) {
     button.style.backgroundColor = bestColors.get(key);
+    button.style.borderColor = bestColors.get(key);
   }
 }
 
