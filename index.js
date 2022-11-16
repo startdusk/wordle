@@ -18,13 +18,10 @@ let secret = wordList[randomIndex];
 let currentAttempt = "";
 let history = [];
 
-let grid = document.getElementById("grid");
-
-buildGrid();
-updateGrid();
-window.addEventListener("keydown", handleKeyDown);
-
 function handleKeyDown(e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) {
+    return;
+  }
   const letter = e.key.toLowerCase();
   if (letter === "enter") {
     if (currentAttempt.length < 5) {
@@ -38,7 +35,7 @@ function handleKeyDown(e) {
     currentAttempt = "";
   } else if (letter === "backspace") {
     currentAttempt = currentAttempt.slice(0, currentAttempt.length - 1);
-  } else if (/[a-z]/.test(letter)) {
+  } else if (/^[a-z]$/.test(letter)) {
     if (currentAttempt.length < 5) {
       currentAttempt += letter;
     }
@@ -77,22 +74,77 @@ function drawAttempt(row, attempt, isCurrent) {
       cell.innerHTML = '<div style="opacity: 0;">X</div>';
     }
     if (isCurrent) {
-      cell.style.backgroundColor = "#111";
+      cell.style.backgroundColor = BLACK;
     } else {
       cell.style.backgroundColor = getBgColor(attempt, i);
     }
   }
 }
 
+const BLACK = "#111";
+const GREY = "#212121";
+const LIGHT_GREY = "#888";
+const GREEN = "#538d4e";
+const YELLOW = "#b59f3b";
+
 function getBgColor(attempt, i) {
   let correctLetter = secret[i];
   let attemptLetter = attempt[i];
   if (attemptLetter === undefined || secret.indexOf(attemptLetter) === -1) {
-    return "#212121";
+    return GREY;
   }
 
   if (correctLetter === attemptLetter) {
-    return "#538d4e";
+    return GREEN;
   }
-  return "#b59f3b";
+  return YELLOW;
 }
+
+function buildKeybord() {
+  buildKeybordRow("qwertyuiop", false);
+  buildKeybordRow("asdfghjkl", false);
+  buildKeybordRow("zxcvbnm", true);
+}
+
+function buildKeybordRow(letters, isLastRow) {
+  let row = document.createElement("div");
+  if (isLastRow) {
+    let button = document.createElement("button");
+    button.textContent = "Enter";
+    button.className = "button";
+    button.style.backgroundColor = LIGHT_GREY;
+    button.onclick = () => {
+      // TODO:
+    };
+    row.appendChild(button);
+  }
+  for (let letter of letters) {
+    let button = document.createElement("button");
+    button.textContent = letter;
+    button.className = "button";
+    button.style.backgroundColor = LIGHT_GREY;
+    button.onclick = () => {
+      // TODO:
+    };
+    row.appendChild(button);
+  }
+  if (isLastRow) {
+    let button = document.createElement("button");
+    button.textContent = "Backspace";
+    button.className = "button";
+    button.style.backgroundColor = LIGHT_GREY;
+    button.onclick = () => {
+      // TODO:
+    };
+    row.appendChild(button);
+  }
+  keybord.appendChild(row);
+}
+
+let grid = document.getElementById("grid");
+let keybord = document.getElementById("keybord");
+
+buildGrid();
+buildKeybord();
+updateGrid();
+window.addEventListener("keydown", handleKeyDown);
