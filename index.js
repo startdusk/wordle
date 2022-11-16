@@ -12,8 +12,9 @@ let wordList = [
   "crabs",
 ];
 
-let randomIndex = Math.floor(Math.random() * wordList.length);
-let secret = wordList[randomIndex];
+// let randomIndex = Math.floor(Math.random() * wordList.length);
+// let secret = wordList[randomIndex];
+let secret = wordList[0];
 
 let currentAttempt = "";
 let history = [];
@@ -26,6 +27,9 @@ function handleKeyDown(e) {
 }
 
 function handleKey(key) {
+  if (history.length === 6) {
+    return;
+  }
   const letter = key.toLowerCase();
   if (letter === "enter") {
     if (currentAttempt.length < 5) {
@@ -35,9 +39,13 @@ function handleKey(key) {
       alert("Not in my thesaurus");
       reurn;
     }
+    if (history.length === 5 && currentAttempt !== secret) {
+      alert(secret);
+    }
     history.push(currentAttempt);
     currentAttempt = "";
     updateKeybord();
+    saveGame();
   } else if (letter === "backspace") {
     currentAttempt = currentAttempt.slice(0, currentAttempt.length - 1);
   } else if (/^[a-z]$/.test(letter)) {
@@ -173,10 +181,31 @@ function updateKeybord() {
   }
 }
 
+function loadGame() {
+  let data;
+  try {
+    data = JSON.parse(localStorage.getItem("data"));
+  } catch (error) {}
+  if (data != null) {
+    history = data.history;
+  }
+}
+
+function saveGame() {
+  const data = JSON.stringify({
+    secret,
+    history,
+  });
+  try {
+    localStorage.setItem("data", data);
+  } catch (error) {}
+}
+
 let grid = document.getElementById("grid");
 let keybord = document.getElementById("keybord");
 let keybordButtons = new Map();
 
+loadGame();
 buildGrid();
 buildKeybord();
 updateGrid();
