@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useContext, useEffect } from "react";
+import { KeyContext } from "./context.js";
 
 const BLACK = "#111";
 const GREY = "#212121";
@@ -52,9 +53,11 @@ export default function wordle() {
   });
   return (
     <div id="screen">
-      <h1>Wordle</h1>
-      <Grid history={history} currentAttempt={currentAttempt} />
-      <Keyboard onKey={handleKey} />
+      <KeyContext.Provider value={handleKey}>
+        <h1>Wordle</h1>
+        <Grid history={history} currentAttempt={currentAttempt} />
+        <Keyboard />
+      </KeyContext.Provider>
     </div>
   );
 }
@@ -151,38 +154,37 @@ function getBgColor(attempt, index) {
   return YELLOW;
 }
 
-function Keyboard({ onKey }) {
+function Keyboard() {
   return (
     <div id="keyboard">
-      <KeyboardRow letters={"qwertyuiop"} onKey={onKey} isLast={false} />
-      <KeyboardRow letters={"asdfghjkl"} onKey={onKey} isLast={false} />
-      <KeyboardRow letters={"zxcvbnm"} onKey={onKey} isLast={true} />
+      <KeyboardRow letters={"qwertyuiop"} isLast={false} />
+      <KeyboardRow letters={"asdfghjkl"} isLast={false} />
+      <KeyboardRow letters={"zxcvbnm"} isLast={true} />
     </div>
   );
 }
 
-function KeyboardRow({ letters, isLast, onKey }) {
+function KeyboardRow({ letters, isLast }) {
   return (
     <div>
-      {isLast ? (
-        <Button buttonKey={"enter"} onKey={onKey} children={"Enter"} />
-      ) : null}
+      {isLast ? <Button buttonKey={"enter"} children={"Enter"} /> : null}
       {Array.from(letters).map((letter) => {
-        return <Button buttonKey={letter} onKey={onKey} children={letter} />;
+        return <Button buttonKey={letter} children={letter} />;
       })}
       {isLast ? (
-        <Button buttonKey={"backspace"} onKey={onKey} children={"Backspace"} />
+        <Button buttonKey={"backspace"} children={"Backspace"} />
       ) : null}
     </div>
   );
 }
 
-function Button({ buttonKey, children, onKey }) {
+function Button({ buttonKey, children }) {
+  const handleKey = useContext(KeyContext);
   return (
     <button
       className="button"
       onClick={() => {
-        onKey(buttonKey);
+        handleKey(buttonKey);
       }}
       style={{
         backgroundColor: LIGHT_GREY,
