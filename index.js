@@ -1,4 +1,7 @@
-"use strict";
+import * as React from "react";
+
+console.log(React);
+console.log(<div />);
 
 let wordList = [
   "patio",
