@@ -43,7 +43,7 @@ function handleKey(key) {
     }
     if (!wordList.includes(currentAttempt)) {
       alert("Not in my thesaurus");
-      reurn;
+      return;
     }
     if (history.length === 5 && currentAttempt !== secret) {
       alert(secret);
