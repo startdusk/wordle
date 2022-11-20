@@ -90,32 +90,49 @@ const wordList = [
 ];
 
 let secret = wordList[0];
-// let history = ["piano", "horse"];
-// let currentAttempt = "wat";
 
 function Grid({ history, currentAttempt }) {
   const rows = [];
   for (let i = 0; i < 6; i++) {
     if (i < history.length) {
-      rows.push(<Attempt key={i} attempt={history[i]} solved={true} />);
+      rows.push(
+        <Attempt key={i} attempt={history[i]} solved={true} isCurrent={false} />
+      );
     } else if (i === history.length) {
-      rows.push(<Attempt key={i} attempt={currentAttempt} solved={false} />);
+      rows.push(
+        <Attempt
+          key={i}
+          attempt={currentAttempt}
+          solved={false}
+          isCurrent={true}
+        />
+      );
     } else {
-      rows.push(<Attempt key={i} attempt="" solved={false} />);
+      rows.push(
+        <Attempt key={i} attempt="" solved={false} isCurrent={false} />
+      );
     }
   }
   return <div id="grid">{rows}</div>;
 }
 
-function Attempt({ attempt, solved }) {
+function Attempt({ attempt, solved, isCurrent }) {
   const cells = [];
   for (let i = 0; i < 5; i++) {
-    cells.push(<Cell key={i} index={i} attempt={attempt} solved={solved} />);
+    cells.push(
+      <Cell
+        key={i}
+        index={i}
+        attempt={attempt}
+        solved={solved}
+        isCurrent={isCurrent && i === attempt.length - 1}
+      />
+    );
   }
   return <div>{cells}</div>;
 }
 
-function Cell({ index, attempt, solved }) {
+function Cell({ index, attempt, solved, isCurrent }) {
   let content;
   const hasLetter = attempt[index] !== undefined;
   if (hasLetter) {
@@ -123,27 +140,17 @@ function Cell({ index, attempt, solved }) {
   } else {
     content = <div style={{ opacity: 0 }}>X</div>;
   }
-
-  const cellRef = useRef(null);
-  const prevHasLetterRef = useRef(hasLetter);
-  useEffect(() => {
-    const prevHasLeeter = prevHasLetterRef.current;
-    const didFlip = hasLetter !== prevHasLeeter;
-    const isLoad = prevHasLeeter === null;
-    if (!isLoad && didFlip) {
-      const cell = cellRef.current;
-      if (hasLetter) {
-        animatePress(cell);
-      } else {
-        clearAnimation(cell);
-      }
-    }
-    prevHasLetterRef.current = hasLetter;
-  });
-
   const color = getBgColor(attempt, index);
+  let style = null;
+  if (isCurrent) {
+    style = {
+      animationName: "press",
+      animationDuration: "100ms",
+      animationTimingFunction: "ease-out",
+    };
+  }
   return (
-    <div ref={cellRef} className={"cell " + (solved ? "solved" : "")}>
+    <div style={style} className={"cell " + (solved ? "solved" : "")}>
       <div
         className="surface"
         style={{
@@ -245,16 +252,4 @@ function saveHistory(history) {
   try {
     localStorage.setItem("data", data);
   } catch (error) {}
-}
-
-function animatePress(cell) {
-  cell.style.animationName = "press";
-  cell.style.animationDuration = "100ms";
-  cell.style.animationTimingFunction = "ease-out";
-}
-
-function clearAnimation(cell) {
-  cell.style.animationName = "";
-  cell.style.animationDuration = "";
-  cell.style.animationTimingFunction = "";
 }
