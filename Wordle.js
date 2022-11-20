@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import { KeyContext } from "./context.js";
 
 const BLACK = "#111";
@@ -11,6 +11,21 @@ const YELLOW = "#b59f3b";
 export default function wordle() {
   const [history, setHistory] = useState([]);
   const [currentAttempt, setCurrentAttempt] = useState("");
+  const loadedRef = useRef(false);
+  useEffect(() => {
+    if (loadedRef.current) {
+      return;
+    }
+    loadedRef.current = true;
+    const savedHistory = loadHistory();
+    if (savedHistory) {
+      setHistory(savedHistory);
+    }
+  });
+  useEffect(() => {
+    saveHistory(history);
+  }, [history]);
+
   const handleKey = (key) => {
     if (history.length === 6) {
       return;
@@ -28,9 +43,9 @@ export default function wordle() {
       if (history.length === 5 && currentAttempt !== secret) {
         alert(secret);
       }
-      setHistory([...history, currentAttempt]);
+      const newHistory = [...history, currentAttempt];
+      setHistory(newHistory);
       setCurrentAttempt("");
-      // TODO: saveGame();
       // TODO: parseInput();
     } else if (letter === "backspace") {
       setCurrentAttempt(currentAttempt.slice(0, currentAttempt.length - 1));
@@ -107,11 +122,28 @@ function Cell({ index, attempt, solved }) {
     content = attempt[index];
   } else {
     content = <div style={{ opacity: 0 }}>X</div>;
-    // TODO: clearAnimation(cell)
   }
+
+  const cellRef = useRef(null);
+  const prevHasLetterRef = useRef(hasLetter);
+  useEffect(() => {
+    const prevHasLeeter = prevHasLetterRef.current;
+    const didFlip = hasLetter !== prevHasLeeter;
+    const isLoad = prevHasLeeter === null;
+    if (!isLoad && didFlip) {
+      const cell = cellRef.current;
+      if (hasLetter) {
+        animatePress(cell);
+      } else {
+        clearAnimation(cell);
+      }
+    }
+    prevHasLetterRef.current = hasLetter;
+  });
+
   const color = getBgColor(attempt, index);
   return (
-    <div className={"cell " + (solved ? "solved" : "")}>
+    <div ref={cellRef} className={"cell " + (solved ? "solved" : "")}>
       <div
         className="surface"
         style={{
@@ -193,4 +225,36 @@ function Button({ buttonKey, children }) {
       {children}
     </button>
   );
+}
+
+function loadHistory() {
+  let data;
+  try {
+    data = JSON.parse(localStorage.getItem("data"));
+  } catch (error) {}
+  if (data != null) {
+    return data.history;
+  }
+}
+
+function saveHistory(history) {
+  const data = JSON.stringify({
+    secret,
+    history,
+  });
+  try {
+    localStorage.setItem("data", data);
+  } catch (error) {}
+}
+
+function animatePress(cell) {
+  cell.style.animationName = "press";
+  cell.style.animationDuration = "100ms";
+  cell.style.animationTimingFunction = "ease-out";
+}
+
+function clearAnimation(cell) {
+  cell.style.animationName = "";
+  cell.style.animationDuration = "";
+  cell.style.animationTimingFunction = "";
 }
