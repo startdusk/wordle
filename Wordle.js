@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect, useMemo } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import { KeyContext } from "./context.js";
 
 const BLACK = "#111";
@@ -8,11 +8,7 @@ const MIDDLE_GREY = "#666";
 const GREEN = "#538d4e";
 const YELLOW = "#b59f3b";
 
-export default function wordle() {
-  const [history, setHistory] = useState([]);
-  const [currentAttempt, setCurrentAttempt] = useState("");
-  const loadedRef = useRef(false);
-
+function calculateBestColors(history) {
   const getBetterColor = (a, b) => {
     if (a === GREEN || b === GREEN) {
       return GREEN;
@@ -22,18 +18,25 @@ export default function wordle() {
     }
     return GREY;
   };
-  const bestColors = useMemo(() => {
-    const map = new Map();
-    for (let attempt of history) {
-      for (let i = 0; i < attempt.length; i++) {
-        const color = getBgColor(attempt, i);
-        const key = attempt[i];
-        const bestColor = map.get(key);
-        map.set(key, getBetterColor(color, bestColor));
-      }
+  const map = new Map();
+  for (let attempt of history) {
+    for (let i = 0; i < attempt.length; i++) {
+      const color = getBgColor(attempt, i);
+      const key = attempt[i];
+      const bestColor = map.get(key);
+      map.set(key, getBetterColor(color, bestColor));
     }
-    return map;
-  }, [history]);
+  }
+  return map;
+}
+
+export default function Wordle() {
+  const [history, setHistory] = useState([]);
+  const [currentAttempt, setCurrentAttempt] = useState("");
+  const [bestColors, setBestColors] = useState(() => new Map());
+  const loadedRef = useRef(false);
+  const animationRef = useRef(false);
+
   useEffect(() => {
     if (loadedRef.current) {
       return;
@@ -42,17 +45,31 @@ export default function wordle() {
     const savedHistory = loadHistory();
     if (savedHistory) {
       setHistory(savedHistory);
+      setBestColors(calculateBestColors(savedHistory));
     }
   });
   useEffect(() => {
     saveHistory(history);
   }, [history]);
 
+  const waitForAnimation = (newHistory) => {
+    if (animationRef.current) {
+      throw Error("should never happen");
+    }
+    animationRef.current = true;
+    setTimeout(() => {
+      animationRef.current = false;
+      setBestColors(calculateBestColors(newHistory));
+    }, 2000);
+  };
+
   const handleKey = (key) => {
     if (history.length === 6) {
       return;
     }
-    // TODO: isAnimating check
+    if (animationRef.current) {
+      return;
+    }
     const letter = key.toLowerCase();
     if (letter === "enter") {
       if (currentAttempt.length < 5) {
@@ -68,7 +85,7 @@ export default function wordle() {
       const newHistory = [...history, currentAttempt];
       setHistory(newHistory);
       setCurrentAttempt("");
-      // TODO: parseInput();
+      waitForAnimation(newHistory);
     } else if (letter === "backspace") {
       setCurrentAttempt(currentAttempt.slice(0, currentAttempt.length - 1));
     } else if (/^[a-z]$/.test(letter)) {
