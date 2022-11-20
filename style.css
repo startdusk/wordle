@@ -76,6 +76,11 @@ h1 {
   z-index: 1;
   transform: rotateX(180deg);
 }
+.cell.filled {
+  animation-name: press;
+  animation-duration: 100ms;
+  animation-timing-function: ease-out;
+}
 @keyframes press {
   from {
     opacity: 0.5;

@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect } from "react";
+import { useState, useContext, useRef, useEffect, useMemo } from "react";
 import { KeyContext } from "./context.js";
 
 const BLACK = "#111";
@@ -12,6 +12,28 @@ export default function wordle() {
   const [history, setHistory] = useState([]);
   const [currentAttempt, setCurrentAttempt] = useState("");
   const loadedRef = useRef(false);
+
+  const getBetterColor = (a, b) => {
+    if (a === GREEN || b === GREEN) {
+      return GREEN;
+    }
+    if (a === YELLOW || b === YELLOW) {
+      return YELLOW;
+    }
+    return GREY;
+  };
+  const bestColors = useMemo(() => {
+    const map = new Map();
+    for (let attempt of history) {
+      for (let i = 0; i < attempt.length; i++) {
+        const color = getBgColor(attempt, i);
+        const key = attempt[i];
+        const bestColor = map.get(key);
+        map.set(key, getBetterColor(color, bestColor));
+      }
+    }
+    return map;
+  }, [history]);
   useEffect(() => {
     if (loadedRef.current) {
       return;
@@ -52,7 +74,6 @@ export default function wordle() {
     } else if (/^[a-z]$/.test(letter)) {
       if (currentAttempt.length < 5) {
         setCurrentAttempt(currentAttempt + letter);
-        // TODO: animatePress(currentAttempt.length - 1);
       }
     }
   };
@@ -68,7 +89,7 @@ export default function wordle() {
   });
   return (
     <div id="screen">
-      <KeyContext.Provider value={handleKey}>
+      <KeyContext.Provider value={{ handleKey, bestColors }}>
         <h1>Wordle</h1>
         <Grid history={history} currentAttempt={currentAttempt} />
         <Keyboard />
@@ -95,39 +116,20 @@ function Grid({ history, currentAttempt }) {
   const rows = [];
   for (let i = 0; i < 6; i++) {
     if (i < history.length) {
-      rows.push(
-        <Attempt key={i} attempt={history[i]} solved={true} isCurrent={false} />
-      );
+      rows.push(<Attempt key={i} attempt={history[i]} solved={true} />);
     } else if (i === history.length) {
-      rows.push(
-        <Attempt
-          key={i}
-          attempt={currentAttempt}
-          solved={false}
-          isCurrent={true}
-        />
-      );
+      rows.push(<Attempt key={i} attempt={currentAttempt} solved={false} />);
     } else {
-      rows.push(
-        <Attempt key={i} attempt="" solved={false} isCurrent={false} />
-      );
+      rows.push(<Attempt key={i} attempt="" solved={false} />);
     }
   }
   return <div id="grid">{rows}</div>;
 }
 
-function Attempt({ attempt, solved, isCurrent }) {
+function Attempt({ attempt, solved }) {
   const cells = [];
   for (let i = 0; i < 5; i++) {
-    cells.push(
-      <Cell
-        key={i}
-        index={i}
-        attempt={attempt}
-        solved={solved}
-        isCurrent={isCurrent && i === attempt.length - 1}
-      />
-    );
+    cells.push(<Cell key={i} index={i} attempt={attempt} solved={solved} />);
   }
   return <div>{cells}</div>;
 }
@@ -141,16 +143,12 @@ function Cell({ index, attempt, solved, isCurrent }) {
     content = <div style={{ opacity: 0 }}>X</div>;
   }
   const color = getBgColor(attempt, index);
-  let style = null;
-  if (isCurrent) {
-    style = {
-      animationName: "press",
-      animationDuration: "100ms",
-      animationTimingFunction: "ease-out",
-    };
-  }
   return (
-    <div style={style} className={"cell " + (solved ? "solved" : "")}>
+    <div
+      className={
+        "cell " + (solved ? "solved" : "") + (hasLetter ? " filled" : "")
+      }
+    >
       <div
         className="surface"
         style={{
@@ -204,11 +202,18 @@ function Keyboard() {
 }
 
 function KeyboardRow({ letters, isLast }) {
+  const { bestColors } = useContext(KeyContext);
   return (
     <div>
       {isLast ? <Button buttonKey={"enter"} children={"Enter"} /> : null}
       {Array.from(letters).map((letter) => {
-        return <Button buttonKey={letter} children={letter} />;
+        return (
+          <Button
+            buttonKey={letter}
+            children={letter}
+            color={bestColors.get(letter)}
+          />
+        );
       })}
       {isLast ? (
         <Button buttonKey={"backspace"} children={"Backspace"} />
@@ -217,8 +222,8 @@ function KeyboardRow({ letters, isLast }) {
   );
 }
 
-function Button({ buttonKey, children }) {
-  const handleKey = useContext(KeyContext);
+function Button({ buttonKey, children, color = LIGHT_GREY }) {
+  const { handleKey } = useContext(KeyContext);
   return (
     <button
       className="button"
@@ -226,7 +231,8 @@ function Button({ buttonKey, children }) {
         handleKey(buttonKey);
       }}
       style={{
-        backgroundColor: LIGHT_GREY,
+        backgroundColor: color,
+        borderColor: color,
       }}
     >
       {children}
