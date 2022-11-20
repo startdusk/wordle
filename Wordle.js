@@ -8,58 +8,22 @@ const MIDDLE_GREY = "#666";
 const GREEN = "#538d4e";
 const YELLOW = "#b59f3b";
 
-function calculateBestColors(history) {
-  const getBetterColor = (a, b) => {
-    if (a === GREEN || b === GREEN) {
-      return GREEN;
-    }
-    if (a === YELLOW || b === YELLOW) {
-      return YELLOW;
-    }
-    return GREY;
-  };
-  const map = new Map();
-  for (let attempt of history) {
-    for (let i = 0; i < attempt.length; i++) {
-      const color = getBgColor(attempt, i);
-      const key = attempt[i];
-      const bestColor = map.get(key);
-      map.set(key, getBetterColor(color, bestColor));
-    }
-  }
-  return map;
-}
-
 export default function Wordle() {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = usePersistedHistory((h) => {
+    waitForAnimation(h);
+  });
   const [currentAttempt, setCurrentAttempt] = useState("");
   const [bestColors, setBestColors] = useState(() => new Map());
-  const loadedRef = useRef(false);
+
   const animationRef = useRef(false);
-
-  useEffect(() => {
-    if (loadedRef.current) {
-      return;
-    }
-    loadedRef.current = true;
-    const savedHistory = loadHistory();
-    if (savedHistory) {
-      setHistory(savedHistory);
-      setBestColors(calculateBestColors(savedHistory));
-    }
-  });
-  useEffect(() => {
-    saveHistory(history);
-  }, [history]);
-
-  const waitForAnimation = (newHistory) => {
+  const waitForAnimation = (nextHistory) => {
     if (animationRef.current) {
       throw Error("should never happen");
     }
     animationRef.current = true;
     setTimeout(() => {
       animationRef.current = false;
-      setBestColors(calculateBestColors(newHistory));
+      setBestColors(calculateBestColors(nextHistory));
     }, 2000);
   };
 
@@ -151,7 +115,7 @@ function Attempt({ attempt, solved }) {
   return <div>{cells}</div>;
 }
 
-function Cell({ index, attempt, solved, isCurrent }) {
+function Cell({ index, attempt, solved }) {
   let content;
   const hasLetter = attempt[index] !== undefined;
   if (hasLetter) {
@@ -275,4 +239,48 @@ function saveHistory(history) {
   try {
     localStorage.setItem("data", data);
   } catch (error) {}
+}
+
+function calculateBestColors(history) {
+  const getBetterColor = (a, b) => {
+    if (a === GREEN || b === GREEN) {
+      return GREEN;
+    }
+    if (a === YELLOW || b === YELLOW) {
+      return YELLOW;
+    }
+    return GREY;
+  };
+  const map = new Map();
+  for (let attempt of history) {
+    for (let i = 0; i < attempt.length; i++) {
+      const color = getBgColor(attempt, i);
+      const key = attempt[i];
+      const bestColor = map.get(key);
+      map.set(key, getBetterColor(color, bestColor));
+    }
+  }
+  return map;
+}
+
+function usePersistedHistory(onRestore) {
+  const [history, setHistory] = useState([]);
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (loadedRef.current) {
+      return;
+    }
+    loadedRef.current = true;
+    const savedHistory = loadHistory();
+    if (savedHistory) {
+      setHistory(savedHistory);
+      onRestore(savedHistory);
+    }
+  });
+  useEffect(() => {
+    saveHistory(history);
+  }, [history]);
+
+  return [history, setHistory];
 }
